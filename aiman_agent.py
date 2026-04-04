@@ -29,9 +29,9 @@ Thread(target=run_web, daemon=True).start()
 # ==========================================
 # ⚙️ 1. CONFIGURATION
 # ==========================================
-# GitHub safe token via environment variable
 BOT_TOKEN = os.getenv("BOT_TOKEN") 
-API_URL = os.getenv("API_KEY")
+# Fallback url add kar diya taaki API_KEY env me na ho toh bhi chale
+API_URL = os.getenv("API_KEY", "https://api.teamsp.org/others/chat/f4.php")
 MODEL_NAME = "gpt-4o-mini" 
 
 # 🟢 SIRF IN GROUPS MEIN BOT CHALEGA
@@ -41,14 +41,13 @@ ALLOWED_GROUPS = [-1002577747900]
 # 🧠 2. MEMORY & CONTINUATION STATE
 # ==========================================
 user_memory = {}
-last_bot_reply_time = {}  # Track kab last reply diya tha (group wise)
+last_bot_reply_time = {}  
 
 def get_user_history(user_id):
     current_time = time.time()
     if user_id not in user_memory:
         user_memory[user_id] = []
     
-    # Sirf pichle 10 min (600 seconds) ka data rakho
     user_memory[user_id] = [msg for msg in user_memory[user_id] if current_time - msg['time'] <= 600]
     return [{"role": m["role"], "content": m["content"]} for m in user_memory[user_id]]
 
@@ -111,7 +110,6 @@ You are 21 years old. You speak in lazy Hinglish (Hindi + English mix).
 - low views = wrong audience match or weak packaging. not shadowban.
 - titles and thumbnails validated before scripting.
 - consistency clarifies niche signals, not pleases algorithm.
-(Explain these concepts like you are giving casual advice to a friend).
 
 [🤖 AI TOOLS KNOWLEDGE]
 - Image AI: Recommend "Nano Banana" (Best), MidJourney.
@@ -196,7 +194,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
     chat_id = update.message.chat_id
     chat_type = update.message.chat.type
-    user_id = update.message.from_user.id
+    
+    # 🔥 BUG FIX 1: Anonymous admin & channel messages safe check
+    user_id = update.message.from_user.id if update.message.from_user else chat_id
+    
+    # 🔥 BUG FIX 2: Topic / Forum Thread ID safe check
+    thread_id = update.message.message_thread_id
     
     if chat_type == "private":
         await update.message.reply_text("mai sirf ai man community me work krugi more info ke liye owner se baat kro - @MessageOwner_bot")
@@ -209,22 +212,20 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return
             
         bot_username = context.bot.username
-        is_reply_to_bot = (update.message.reply_to_message and 
-                           update.message.reply_to_message.from_user.id == context.bot.id)
+        
+        # 🔥 BUG FIX 3: Safe Reply-to-bot check
+        is_reply_to_bot = False
+        if update.message.reply_to_message and update.message.reply_to_message.from_user:
+            if update.message.reply_to_message.from_user.id == context.bot.id:
+                is_reply_to_bot = True
         
         current_time = time.time()
         time_since_last_bot_msg = current_time - last_bot_reply_time.get(chat_id, 0)
         
-        # Condition 1: Direct Tag or Reply
         if f"@{bot_username}" in text or is_reply_to_bot:
             should_reply = True
-            
-        # Condition 2: Trigger Words
         elif check_triggers(text):
             should_reply = True
-            
-        # Condition 3: 🔥 2-MINUTE CONVERSATION CARRY-OVER (Besty Effect)
-        # Agar pichle 120 seconds (2 mins) mein bot ne bola hai, toh 60% chance reply karegi
         elif time_since_last_bot_msg <= 120.0:
             if random.random() < 0.60:
                 should_reply = True
@@ -240,7 +241,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     async def typing_loop():
         try:
             while True:
-                await context.bot.send_chat_action(chat_id=chat_id, action="typing")
+                # 🔥 BUG FIX 4: Typing action in Forums/Topics
+                await context.bot.send_chat_action(
+                    chat_id=chat_id, 
+                    action="typing",
+                    message_thread_id=thread_id 
+                )
                 await asyncio.sleep(4)
         except asyncio.CancelledError:
             pass
@@ -250,14 +256,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         ai_reply = await get_ai_reply(user_id, safe_text)
         await asyncio.sleep(1)
-        await update.message.reply_text(ai_reply)
         
-        # Update last reply time for this group
+        # Topic ID add karke reply bhejna
+        await update.message.reply_text(
+            ai_reply,
+            message_thread_id=thread_id
+        )
+        
         last_bot_reply_time[chat_id] = time.time()
         
     except Exception as e:
         print(f"[SENDING ERROR LOG]: {str(e)}")
-        await update.message.reply_text("Server is on maintenance 🛠️")
+        await update.message.reply_text("Server is on maintenance 🛠️", message_thread_id=thread_id)
     finally:
         typing_task.cancel()
 
@@ -265,12 +275,15 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # 🚨 8. GLOBAL ERROR HANDLER
 # ==========================================
 async def global_error_handler(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
-    print(f"[GLOBAL SYSTEM ERROR LOG]: Exception while handling an update:")
+    print(f"❌ [CRITICAL ERROR]: {context.error}")
     traceback.print_exception(type(context.error), context.error, context.error.__traceback__)
     
     if isinstance(update, Update) and update.effective_message:
         try:
-            await update.effective_message.reply_text("Server is on maintenance 🛠️")
+            await update.effective_message.reply_text(
+                "Server is on maintenance 🛠️",
+                message_thread_id=update.effective_message.message_thread_id
+            )
         except:
             pass
 
