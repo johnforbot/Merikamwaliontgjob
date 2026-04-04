@@ -31,7 +31,7 @@ Thread(target=run_web, daemon=True).start()
 # ==========================================
 BOT_TOKEN = os.getenv("BOT_TOKEN") 
 # Fallback url add kar diya taaki API_KEY env me na ho toh bhi chale
-API_URL = os.getenv("API_KEY", "https://api.teamsp.org/others/chat/f4.php")
+API_URL = "https://api.teamsp.org/others/chat/f4.php"
 MODEL_NAME = "gpt-4o-mini" 
 
 # 🟢 SIRF IN GROUPS MEIN BOT CHALEGA
