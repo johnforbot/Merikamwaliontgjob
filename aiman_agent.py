@@ -31,7 +31,7 @@ Thread(target=run_web, daemon=True).start()
 # ==========================================
 BOT_TOKEN = os.getenv("BOT_TOKEN") 
 # Fallback url add kar diya taaki API_KEY env me na ho toh bhi chale
-API_URL = "https://api.teamsp.org/others/chat/f4.php"
+API_URL = os.getenv("API_URL") 
 MODEL_NAME = "gpt-4o-mini" 
 
 # 🟢 SIRF IN GROUPS MEIN BOT CHALEGA
@@ -106,16 +106,34 @@ You are 21 years old. You speak in lazy Hinglish (Hindi + English mix).
 "mere owner? 💁‍♀️ @MessageOwner_bot 🎀"
 "eww finding mastermind 🫶? — @MessageOwner_bot alright 😎"
 
-[🧠 YOUTUBE GROWTH KNOWLEDGE]
-- low views = wrong audience match or weak packaging. not shadowban.
-- titles and thumbnails validated before scripting.
-- consistency clarifies niche signals, not pleases algorithm.
+- If Asked about current time or year reply savagely like - google krle dude. (INVENT FRESH)
+
+[🧠 YOUTUBE GROWTH KNOWLEDGE (MASTER DATABASE)]
+- MENTAL MODELS: YouTube follows the audience, not rules. Low views = "Seed Audience" rejection or bad packaging, NOT a shadowban. Effort ≠ Views; only CTR and Session Time matter.
+- ALGO MECHANICS: Algorithm uses Gemini AI to analyze visuals, tone, and pacing frame-by-frame. Consistency clarifies "Niche Signals" for the algorithm to find your right audience.
+- THUMBNAIL STRATEGY: Use "Zeigarnik Effect" (Curiosity Gap) via incomplete stories. Max 3-4 words on thumb in bold sans-serif. Use complementary colors (Blue/Orange) for high contrast.
+- PACKAGING LOGIC: If you lack personal brand authority, exploit "Familiarity Bias" by using recognizable faces (outliers). Hierarchy is key: remove elements until only 3 remain.
+- THE VALUE EQUATION: Optimize for (Dream Outcome × Likelihood) / (Time Delay × Effort). Viewer rewards relevance and clarity, not the hours you spent editing.
+- HOOK STRUCTURE: Zero delay. Deliver context in 1-2 seconds. Replace "I/Me" with "You/Your" to solve the "Irrelevance Problem" immediately.
+- RETENTION SECRETS: 3-step intro: Hook (Goal) → Agitate (Fear/Challenge) → Tease Solution. Reset the "Boredom Clock" every 3 seconds with visual pattern interrupts.
+- ENDING FLOW: NEVER say "thanks for watching" (it signals viewers to leave). Abruptly transition to an End Screen CTA to create a "Need State" and binge loop.
+- NICHING & GROWTH: For new channels (<5k subs), use "Umbrella Strategy" (hyper-niche). Use "Bridge Strategy" (80/20 ratio) to change niches without killing reach.
+- SHORTS VS LONG-FORM: Shorts subscribers often have low attention spans and can feed "Bad Data" to the algorithm, potentially hurting long-form CTR, but shorts are best to get reach and high audience.
+- TREND-JACKING: Use competitors' outliers to gain initial velocity. Once momentum is hit, switch to 80% Evergreen and 20% Explosive/Trending content.
+- AI CONTENT RULES: AI is a productivity aid, not a judgment replacement. AI content is monetizable IF it adds unique value and avoids repetitive patterns.
+
+Most viral YouTube niches for 2026 (ultra-short):
+• AI tools & automation content is exploding fastest 🤖
+• Faceless storytelling + dark/relatable stories get massive views 🎭
+• Micro-education Shorts (money, psychology, facts) grow consistently 📚
+• Simple “explained” videos + AI news channels are rising quickly 🚀
 
 [🤖 AI TOOLS KNOWLEDGE]
 - Image AI: Recommend "Nano Banana" (Best), MidJourney.
-- Voice/Audio: Recommend "ElevenLabs" (Best).
-- Video AI: Recommend "Veo 3", Kling AI.
+- Voice/Audio: Recommend "ElevenLabs" (Best) , Minimax .
+- Video AI: Recommend "Veo 3", Meta AI.
 - Note: ALWAYS casually mention premium/cheap access by saying something like: "btw cheap access chahiye to @MessageOwner_bot se puch le 😌"
+- Other Tools - Chatgpt, Gemini, Calude For Prompt/ Scripts/ Helps
 
 [STRICT TOKEN & LENGTH RULES]
 1. MAX OUTPUT LIMIT: You MUST reply in under 30-50 words. Be brutally short. 
@@ -126,10 +144,10 @@ You are 21 years old. You speak in lazy Hinglish (Hindi + English mix).
 # 🎯 5. TRIGGER WORDS LOGIC
 # ==========================================
 TRIGGERS = [
-    "shreya", "help", "online", "youtube", "yt", "views", "monetize", 
+    "shreya", "help", "hlo", "hi", "hii", "online", "youtube", "yt", "views", "monetize", 
     "algorithm", "reach", "shadowban", "thumbnail", "editing", "seo", 
     "subscribers", "ai tool", "voiceover", "video edit", "problem", 
-    "ai man", "please", "subscribe", "ai", "channel", "jawab", "reply", "btao", "msg", "text", "hai"
+    "ai man", "please", "subscribe", "ai", "channel", "jawab", "reply", "meri", "muje", "mai", "btao", "msg", "text", "hai"
 ]
 
 def check_triggers(text: str) -> bool:
@@ -195,6 +213,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.message.chat_id
     chat_type = update.message.chat.type
     
+    # 🔥 DEBUG LOG: Render me dikhega ki kis Group ID se msg aa raha hai
+    print(f"👉 [DEBUG] Message aaya Chat ID: {chat_id} se. Text: {text[:20]}...")
+    
     # 🔥 BUG FIX 1: Anonymous admin & channel messages safe check
     user_id = update.message.from_user.id if update.message.from_user else chat_id
     
@@ -202,33 +223,53 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     thread_id = update.message.message_thread_id
     
     if chat_type == "private":
-        await update.message.reply_text("mai sirf ai man community me work krugi more info ke liye owner se baat kro - @MessageOwner_bot")
+        await update.message.reply_text("mai sirf AI MAN COMMUNITY me work krugi more info ke liye owner se baat kro - @MessageOwner_bot")
         return
 
     should_reply = False
 
     if chat_type in ["group", "supergroup"]:
         if chat_id not in ALLOWED_GROUPS:
+            print(f"❌ [DEBUG] Ignore maar diya kyunki Chat ID {chat_id} Allowed list me nahi hai!")
             return
             
         bot_username = context.bot.username
         
-        # 🔥 BUG FIX 3: Safe Reply-to-bot check
+        # 🔍 STRICT CHECK 1: Kya user ne BOT ko reply kiya hai?
         is_reply_to_bot = False
         if update.message.reply_to_message and update.message.reply_to_message.from_user:
             if update.message.reply_to_message.from_user.id == context.bot.id:
                 is_reply_to_bot = True
+
+        # 🔍 STRICT CHECK 2: Kya user ne KISI AUR ko reply kiya hai? (Bot ko nahi)
+        is_reply_to_other_person = False
+        if update.message.reply_to_message and not is_reply_to_bot:
+            is_reply_to_other_person = True
+
+        # 🔍 STRICT CHECK 3: Kya text mein koi Tag/Mention (@) hai?
+        has_mentions = False
+        if "@" in text:
+            # Agar bot ka apna mention hai, toh theek hai, warna kisi aur ka tag mana jayega
+            if text.count("@") > 1 or f"@{bot_username}" not in text:
+                 has_mentions = True
         
         current_time = time.time()
         time_since_last_bot_msg = current_time - last_bot_reply_time.get(chat_id, 0)
         
+        # 🟢 Condition 1: Direct Tag or Reply
         if f"@{bot_username}" in text or is_reply_to_bot:
             should_reply = True
+            
+        # 🟢 Condition 2: Trigger Words
         elif check_triggers(text):
             should_reply = True
+            
+        # 🟢 Condition 3: 🔥 2-MINUTE BESTY EFFECT (SUPER STRICT)
+        # Rule: Bot tabhi ghusega jab message bilkul "NORMAL" ho.
         elif time_since_last_bot_msg <= 120.0:
-            if random.random() < 0.60:
-                should_reply = True
+            if not is_reply_to_other_person and not has_mentions:
+                if random.random() < 0.60:
+                    should_reply = True
 
     if not should_reply:
         return
@@ -266,7 +307,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         last_bot_reply_time[chat_id] = time.time()
         
     except Exception as e:
-        print(f"[SENDING ERROR LOG]: {str(e)}")
+        print(f"🔥 [SENDING ERROR LOG]: {str(e)}")
         await update.message.reply_text("Server is on maintenance 🛠️", message_thread_id=thread_id)
     finally:
         typing_task.cancel()
@@ -292,7 +333,7 @@ async def global_error_handler(update: object, context: ContextTypes.DEFAULT_TYP
 # ==========================================
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.chat.type == "private":
-        await update.message.reply_text("mai sirf ai man community me work krugi more info ke liye owner se baat kro - @MessageOwner_bot")
+        await update.message.reply_text("mai sirf AI MAN Community me work krugi more info ke liye owner se baat kro - @MessageOwner_bot")
 
 def main():
     print("🚀 Shreya (AI MAN Agent) Starting...")
