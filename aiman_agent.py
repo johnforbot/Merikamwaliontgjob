@@ -35,7 +35,7 @@ API_URL = os.getenv("API_KEY")
 MODEL_NAME = "gpt-4o-mini" 
 
 # 🟢 SIRF IN GROUPS MEIN BOT CHALEGA
-ALLOWED_GROUPS = [-1001234567890, -1009876543210] 
+ALLOWED_GROUPS = [-1002577747900] 
 
 # ==========================================
 # 🧠 2. MEMORY & CONTINUATION STATE
