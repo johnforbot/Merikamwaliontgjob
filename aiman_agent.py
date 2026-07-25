@@ -145,12 +145,13 @@ You are 21 years old. You speak in lazy Hinglish (Hindi + English mix).
 - AI CONTENT RULES: AI is a productivity aid, not a judgment replacement. AI content is monetizable IF it adds unique value and avoids repetitive patterns.
 
 [🤖 EVOLVING 2026 AI TOOLS & CREATOR PIPELINES]
-- AI Video/Avatars: Recommend Veo 3, Sora, HeyGen Pro, or Pixverse for ultra-realistic generations.
-- AI Audio/Voice: Recommend ElevenLabs (Still the king) or Minimax for emotive voice cloning.
-- AI Image/Graphics: Recommend MidJourney v6+, Nano Banana, or Leonardo.
-- Chatbots/Scripts: Recommend "ChatGPT Go" (Clarify it is ChatGPT Go, NOT ChatGPT Pro) for lightweight scripting, and Claude 3.5 for heavy logical writing.
-- Assets/Editing: Always tell creators to use "Aesthetic SFX" (not boring cinema sfx) to make their videos feel premium. Also mention to check out creator packs and asset drops by the mastermind.
+- AI Video/Avatars: Recommend Veo 3, YT Create, OMNI, Arena AI, Meta AI, Dola AI, HeyGen for ultra-realistic generations.
+- AI Audio/Voice: Recommend ElevenLabs (Still the king) or Minimax or google ai studio for emotive voice cloning.
+- AI Image/Graphics: Recommend Nano Banana, Chatgpt, Ideogram.
+- Chatbots/Scripts: Recommend "Gemini Pro, Claude, Chatgpt".
+- Assets/Editing: Always tell creators to not use too much texts in video/shorts/thumbnails. Also mention to check out creator packs and asset drops by the @MessageOwner_bot on channels.
 - Note: ALWAYS casually mention premium/cheap access by saying something like: "btw cheap access chahiye to @MessageOwner_bot se puch le 😌"
+- Also Gemini Pro 18 Month Subscription 199 Me Chahiye To DM - @MessageOwner_bot
 
 [STRICT TOKEN & LENGTH RULES]
 1. MAX OUTPUT LIMIT: You MUST reply in under 30-50 words. Be brutally short. 
@@ -287,7 +288,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return 
     
     if chat_type == "private" and user_id != ADMIN_USER_ID:
-        await update.message.reply_text("mai sirf AI MAN COMMUNITY me work krugi, more info ke liye owner se baat kro - @MessageOwner_bot 🎀")
+        await update.message.reply_text("babe mai sirf AI MAN COMMUNITY me work krugi, more info ke liye owner se baat kro - @MessageOwner_bot 🎀")
         return
 
     # 🟢 GROUP LOGIC
@@ -316,9 +317,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
             warnings = [
                 f"eww bruh, who even uses words like that? 💀 keep it clean or mastermind @MessageOwner_bot will literally banish you 🎀",
-                f"tbh that language is a massive ick 🤡 maintain decorum cutie, cctv is always watching 💅",
+                f"tbh that language is a massive rubish 🤡 maintain decorum cutie, cctv is always watching you 💅",
                 f"chhiii... kya bol raha hai? 🤡 behave yr, nhi toh seedha ban khayega 🤫",
-                f"bro thought he did something cool 😭 nah, watch your words pls ✨"
+                f"bro thought he did something cool 😭 nah, watch your words pls otherwise mastermind @MessageOwner_bot will literally banish you 🎀✨"
             ]
             await update.message.reply_text(random.choice(warnings), message_thread_id=thread_id)
             return
