@@ -175,7 +175,7 @@ BLOCKLIST = [
     
     # NSFW & Creeps
     "masterbation", "sheinverse", "shein", "pusssy", "shaadi", "vergin", "virgin", "naked", 
-    "nudes", "penis", "sperm", "nude", "p0rn", "porn", "sexy", "sex", "xxx", "💦", "🔞", "🍑", "boobs",
+    "nudes", "penis", "sperm", "nude", "p0rn", "porn", "sexy", "sex", "xxx", "💦", "🔞", "🍑",  "pel", "sex", "₹", "🥵", "💋", "🔞", "👄", "fuck", "chod", "saale", "18+", "dm", "msg", "ib" ,"kela", "madharchod",
     
     # Abusive Slang
     "bhosdike", "chutiya", "chutiye", "bhosri", "harami", "motherfucker", "dogla", "gaand", 
