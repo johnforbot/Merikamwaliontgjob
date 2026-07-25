@@ -39,12 +39,12 @@ API_PROVIDERS = {
     "groq": {
         "url": "https://api.groq.com/openai/v1/chat/completions",
         "key": os.getenv("GROQ_API_KEY"),
-        "models": ["llama3-70b-8192", "llama3-8b-8192", "mixtral-8x7b-32768"]
+        "models": ["llama-3.3-70b-versatile", "groq/compound", "meta-llama/llama-prompt-guard-2-22m"]
     },
     "mistral": {
         "url": "https://api.mistral.ai/v1/chat/completions",
         "key": os.getenv("MISTRAL_API_KEY"),
-        "models": ["mistral-large-latest", "open-mixtral-8x7b", "open-mistral-7b"]
+        "models": ["mistral-large-latest", "mistral-small-2506", "ministral-3b-2512", "ministral-8b-2512"]
     },
     "openrouter": {
         "url": "https://openrouter.ai/api/v1/chat/completions",
