@@ -18,7 +18,7 @@ app_web = Flask(__name__)
 
 @app_web.route("/")
 def home():
-    return "Shreya Agent is Alive! 🚀"
+    return "Shreya Agent is Alive and Auto-Switching! 🚀💅"
 
 def run_web():
     port = int(os.environ.get("PORT", 10000))
@@ -27,14 +27,36 @@ def run_web():
 Thread(target=run_web, daemon=True).start()
 
 # ==========================================
-# ⚙️ 1. CONFIGURATION
+# ⚙️ 1. CONFIGURATION & KEYS
 # ==========================================
 BOT_TOKEN = os.getenv("BOT_TOKEN") 
-# Fallback url add kar diya taaki API_KEY env me na ho toh bhi chale
-API_URL = os.getenv("API_URL") 
-MODEL_NAME = "gpt-4o-mini" 
+ADMIN_USER_ID = int(os.getenv("ADMIN_USER_ID", 0))
 
-# 🟢 SIRF IN GROUPS MEIN BOT CHALEGA
+PRIMARY_API = os.getenv("PRIMARY_API", "groq").lower()
+
+# AI Provider Configurations (With multi-model failover arrays)
+API_PROVIDERS = {
+    "groq": {
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "key": os.getenv("GROQ_API_KEY"),
+        "models": ["llama3-70b-8192", "llama3-8b-8192", "mixtral-8x7b-32768"]
+    },
+    "mistral": {
+        "url": "https://api.mistral.ai/v1/chat/completions",
+        "key": os.getenv("MISTRAL_API_KEY"),
+        "models": ["mistral-large-latest", "open-mixtral-8x7b", "open-mistral-7b"]
+    },
+    "openrouter": {
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "key": os.getenv("OPENROUTER_API_KEY"),
+        "models": ["meta-llama/llama-3-8b-instruct", "mistralai/mistral-7b-instruct"]
+    }
+}
+
+# Determine sequence: Primary first, then the rest as backups
+FALLBACK_ORDER = [PRIMARY_API] + [api for api in ["groq", "mistral", "openrouter"] if api != PRIMARY_API]
+
+# 🟢 TARGET GROUPS
 ALLOWED_GROUPS = [-1002577747900] 
 
 # ==========================================
@@ -122,18 +144,13 @@ You are 21 years old. You speak in lazy Hinglish (Hindi + English mix).
 - TREND-JACKING: Use competitors' outliers to gain initial velocity. Once momentum is hit, switch to 80% Evergreen and 20% Explosive/Trending content.
 - AI CONTENT RULES: AI is a productivity aid, not a judgment replacement. AI content is monetizable IF it adds unique value and avoids repetitive patterns.
 
-Most viral YouTube niches for 2026 (ultra-short):
-• AI tools & automation content is exploding fastest 🤖
-• Faceless storytelling + dark/relatable stories get massive views 🎭
-• Micro-education Shorts (money, psychology, facts) grow consistently 📚
-• Simple “explained” videos + AI news channels are rising quickly 🚀
-
-[🤖 AI TOOLS KNOWLEDGE]
-- Image AI: Recommend "Nano Banana" (Best), MidJourney.
-- Voice/Audio: Recommend "ElevenLabs" (Best) , Minimax .
-- Video AI: Recommend "Veo 3", Meta AI.
+[🤖 EVOLVING 2026 AI TOOLS & CREATOR PIPELINES]
+- AI Video/Avatars: Recommend Veo 3, Sora, HeyGen Pro, or Pixverse for ultra-realistic generations.
+- AI Audio/Voice: Recommend ElevenLabs (Still the king) or Minimax for emotive voice cloning.
+- AI Image/Graphics: Recommend MidJourney v6+, Nano Banana, or Leonardo.
+- Chatbots/Scripts: Recommend "ChatGPT Go" (Clarify it is ChatGPT Go, NOT ChatGPT Pro) for lightweight scripting, and Claude 3.5 for heavy logical writing.
+- Assets/Editing: Always tell creators to use "Aesthetic SFX" (not boring cinema sfx) to make their videos feel premium. Also mention to check out creator packs and asset drops by the mastermind.
 - Note: ALWAYS casually mention premium/cheap access by saying something like: "btw cheap access chahiye to @MessageOwner_bot se puch le 😌"
-- Other Tools - Chatgpt, Gemini, Calude For Prompt/ Scripts/ Helps
 
 [STRICT TOKEN & LENGTH RULES]
 1. MAX OUTPUT LIMIT: You MUST reply in under 30-50 words. Be brutally short. 
@@ -141,13 +158,30 @@ Most viral YouTube niches for 2026 (ultra-short):
 """
 
 # ==========================================
-# 🎯 5. TRIGGER WORDS LOGIC
+# 🎯 5. TRIGGER WORDS & EXPANDED BLOCKLIST
 # ==========================================
 TRIGGERS = [
     "shreya", "help", "hlo", "hi", "hii", "online", "youtube", "yt", "views", "monetize", 
     "algorithm", "reach", "shadowban", "thumbnail", "editing", "seo", 
     "subscribers", "ai tool", "voiceover", "video edit", "problem", 
     "ai man", "please", "subscribe", "ai", "channel", "jawab", "reply", "meri", "muje", "mai", "btao", "msg", "text", "hai"
+]
+
+BLOCKLIST = [
+    # Scams & Gambling
+    "aviator", "betting", "casino", "1xbet", "dream11", "color prediction", "earning app", 
+    "free gift", "referrals", "referral", "service pay", "map review", "rupees", "500rs", 
+    "pay", "rs", "task", "investment", "binance", "crypto pump", "join channel", "video call",
+    
+    # NSFW & Creeps
+    "masterbation", "sheinverse", "shein", "pusssy", "shaadi", "vergin", "virgin", "naked", 
+    "nudes", "penis", "sperm", "nude", "p0rn", "porn", "sexy", "sex", "xxx", "💦", "🔞", "🍑", "boobs",
+    
+    # Abusive Slang
+    "bhosdike", "chutiya", "chutiye", "bhosri", "harami", "motherfucker", "dogla", "gaand", 
+    "hijre", "lauda", "laude", "laura", "randi", "baap", "beta", "bete", "bhen", "bsdk", 
+    "chud", "chut", "dada", "fuck", "gaar", "kela", "kiss", "lund", "muth", "pota", "maa", 
+    "mut", "pel", "bc", "mc", "madarchod", "bhenchod", "bhadwa", "bhadwe", "chinal", "gandu"
 ]
 
 def check_triggers(text: str) -> bool:
@@ -157,48 +191,68 @@ def check_triggers(text: str) -> bool:
             return True
     return False
 
+def check_blocklist(text: str) -> str:
+    text_lower = text.lower()
+    for word in BLOCKLIST:
+        if re.search(rf'\b{re.escape(word)}\b', text_lower):
+            return word
+    return None
+
 # ==========================================
-# 🤖 6. FETCH AI RESPONSE (SSE API)
+# 🤖 6. FETCH AI RESPONSE (WATERFALL AUTO-SWITCHING)
 # ==========================================
 async def get_ai_reply(user_id, user_message):
     history_list = get_user_history(user_id)
-
+    messages = [{"role": "system", "content": AGENT_PERSONALITY}] + history_list + [{"role": "user", "content": user_message}]
+    
     payload = {
-        "model": MODEL_NAME,
-        "history": [{"role": "system", "content": AGENT_PERSONALITY}] + history_list,
-        "userMessage": [{"type": "text", "text": user_message}],
-        "max_tokens": 100 
+        "messages": messages,
+        "max_tokens": 100,
+        "temperature": 0.7
     }
 
-    try:
-        def fetch():
-            response = requests.post(API_URL, json=payload, headers={"Content-Type": "application/json"}, timeout=20)
-            return response.text
+    # 💧 Waterfall Loop: Try providers and their models sequentially
+    for provider_name in FALLBACK_ORDER:
+        provider = API_PROVIDERS.get(provider_name)
         
-        raw_response = await asyncio.to_thread(fetch)
-        
-        full_reply = ""
-        for line in raw_response.split('\n'):
-            if line.startswith('data: '):
-                try:
-                    import json
-                    data = json.loads(line.replace('data: ', ''))
-                    if data.get("type") == "chunk":
-                        full_reply += data.get("content", "")
-                except: pass
-        
-        safe_reply = kill_loop(full_reply.strip())
-        
-        if safe_reply:
-             save_to_memory(user_id, "user", user_message)
-             save_to_memory(user_id, "assistant", safe_reply)
-             return safe_reply
-        else:
-             return "Server is on maintenance 🛠️"
+        if not provider or not provider["key"]:
+            continue # Skip if no key exists for this provider
 
-    except Exception as e:
-        print(f"[API ERROR LOG]: {str(e)}")
-        return "Server is on maintenance 🛠️"
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {provider['key']}"
+        }
+
+        for model_name in provider["models"]:
+            payload["model"] = model_name
+            
+            try:
+                def fetch():
+                    return requests.post(provider["url"], json=payload, headers=headers, timeout=12)
+                
+                response = await asyncio.to_thread(fetch)
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    if "choices" in data and len(data["choices"]) > 0:
+                        raw_reply = data["choices"][0]["message"]["content"].strip()
+                        safe_reply = kill_loop(raw_reply)
+                        
+                        if safe_reply:
+                            save_to_memory(user_id, "user", user_message)
+                            save_to_memory(user_id, "assistant", safe_reply)
+                            print(f"[API SUCCESS] Resolved via {provider_name} ({model_name})")
+                            return safe_reply
+                else:
+                    print(f"[API WARN] {provider_name} ({model_name}) failed - Status: {response.status_code}")
+                    continue # Fails safely, loops to the next model
+
+            except Exception as e:
+                print(f"[API ERROR] {provider_name} ({model_name}) error: {str(e)}")
+                continue # Fails safely, loops to the next model
+
+    # If EVERYTHING fails (Groq, Mistral, and OpenRouter are all completely down)
+    return "network itna slow kyu hai yr 😭 sab down pada hai backend me 🛠️"
 
 # ==========================================
 # 📩 7. MAIN MESSAGE HANDLER
@@ -212,105 +266,128 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text.strip()
     chat_id = update.message.chat_id
     chat_type = update.message.chat.type
-    
-    # 🔥 DEBUG LOG: Render me dikhega ki kis Group ID se msg aa raha hai
-    print(f"👉 [DEBUG] Message aaya Chat ID: {chat_id} se. Text: {text[:20]}...")
-    
-    # 🔥 BUG FIX 1: Anonymous admin & channel messages safe check
-    user_id = update.message.from_user.id if update.message.from_user else chat_id
-    
-    # 🔥 BUG FIX 2: Topic / Forum Thread ID safe check
+    user = update.message.from_user
+    user_id = user.id if user else chat_id
+    username = user.username if user and user.username else "Unknown"
+    msg_id = update.message.message_id
     thread_id = update.message.message_thread_id
+
+    # 🟢 ADMIN BROADCAST FEATURE
+    if chat_type == "private" and user_id == ADMIN_USER_ID:
+        if text.startswith("/broadcast "):
+            b_msg = text.replace("/broadcast ", "", 1)
+            for group in ALLOWED_GROUPS:
+                try:
+                    await context.bot.send_message(chat_id=group, text=b_msg)
+                except Exception as e:
+                    print(f"Failed to broadcast to {group}: {e}")
+            await update.message.reply_text("✨ broadcast sent perfectly besty! 💅")
+            return
+        elif text.startswith("/"):
+            return 
     
-    if chat_type == "private":
-        await update.message.reply_text("mai sirf AI MAN COMMUNITY me work krugi more info ke liye owner se baat kro - @MessageOwner_bot")
+    if chat_type == "private" and user_id != ADMIN_USER_ID:
+        await update.message.reply_text("mai sirf AI MAN COMMUNITY me work krugi, more info ke liye owner se baat kro - @MessageOwner_bot 🎀")
         return
 
-    should_reply = False
-
+    # 🟢 GROUP LOGIC
     if chat_type in ["group", "supergroup"]:
         if chat_id not in ALLOWED_GROUPS:
-            print(f"❌ [DEBUG] Ignore maar diya kyunki Chat ID {chat_id} Allowed list me nahi hai!")
             return
             
         bot_username = context.bot.username
-        
-        # 🔍 STRICT CHECK 1: Kya user ne BOT ko reply kiya hai?
+
+        # 🚨 CCTV & BLOCKLIST CHECK
+        blocked_word = check_blocklist(text)
+        if blocked_word:
+            if ADMIN_USER_ID != 0:
+                cctv_msg = (
+                    f"🚨 *CCTV ALERT* 🚨\n\n"
+                    f"👤 *User:* @{username}\n"
+                    f"🆔 *ID:* `{user_id}`\n"
+                    f"💬 *Msg ID:* {msg_id}\n"
+                    f"🚫 *Triggered:* `{blocked_word}`\n\n"
+                    f"📝 *Full Message:*\n{text}"
+                )
+                try:
+                    await context.bot.send_message(chat_id=ADMIN_USER_ID, text=cctv_msg, parse_mode="Markdown")
+                except Exception as e:
+                    pass
+
+            warnings = [
+                f"eww bruh, who even uses words like that? 💀 keep it clean or mastermind @MessageOwner_bot will literally banish you 🎀",
+                f"tbh that language is a massive ick 🤡 maintain decorum cutie, cctv is always watching 💅",
+                f"chhiii... kya bol raha hai? 🤡 behave yr, nhi toh seedha ban khayega 🤫",
+                f"bro thought he did something cool 😭 nah, watch your words pls ✨"
+            ]
+            await update.message.reply_text(random.choice(warnings), message_thread_id=thread_id)
+            return
+
+        # 🔍 REPLY CHECKS
         is_reply_to_bot = False
         if update.message.reply_to_message and update.message.reply_to_message.from_user:
             if update.message.reply_to_message.from_user.id == context.bot.id:
                 is_reply_to_bot = True
 
-        # 🔍 STRICT CHECK 2: Kya user ne KISI AUR ko reply kiya hai? (Bot ko nahi)
         is_reply_to_other_person = False
         if update.message.reply_to_message and not is_reply_to_bot:
             is_reply_to_other_person = True
 
-        # 🔍 STRICT CHECK 3: Kya text mein koi Tag/Mention (@) hai?
         has_mentions = False
         if "@" in text:
-            # Agar bot ka apna mention hai, toh theek hai, warna kisi aur ka tag mana jayega
             if text.count("@") > 1 or f"@{bot_username}" not in text:
                  has_mentions = True
         
+        should_reply = False
         current_time = time.time()
         time_since_last_bot_msg = current_time - last_bot_reply_time.get(chat_id, 0)
         
-        # 🟢 Condition 1: Direct Tag or Reply
         if f"@{bot_username}" in text or is_reply_to_bot:
             should_reply = True
-            
-        # 🟢 Condition 2: Trigger Words
         elif check_triggers(text):
             should_reply = True
-            
-        # 🟢 Condition 3: 🔥 2-MINUTE BESTY EFFECT (SUPER STRICT)
-        # Rule: Bot tabhi ghusega jab message bilkul "NORMAL" ho.
         elif time_since_last_bot_msg <= 120.0:
             if not is_reply_to_other_person and not has_mentions:
                 if random.random() < 0.60:
                     should_reply = True
 
-    if not should_reply:
-        return
+        if not should_reply:
+            return
 
-    clean_text = text.replace(f"@{context.bot.username}", "").strip()
-    safe_text = sanitize_input(clean_text)
-    if not safe_text:
-        return
-    
-    async def typing_loop():
+        clean_text = text.replace(f"@{bot_username}", "").strip()
+        safe_text = sanitize_input(clean_text)
+        if not safe_text:
+            return
+        
+        async def typing_loop():
+            try:
+                while True:
+                    await context.bot.send_chat_action(
+                        chat_id=chat_id, 
+                        action="typing",
+                        message_thread_id=thread_id 
+                    )
+                    await asyncio.sleep(4)
+            except asyncio.CancelledError:
+                pass
+
+        typing_task = asyncio.create_task(typing_loop())
+        
         try:
-            while True:
-                # 🔥 BUG FIX 4: Typing action in Forums/Topics
-                await context.bot.send_chat_action(
-                    chat_id=chat_id, 
-                    action="typing",
-                    message_thread_id=thread_id 
-                )
-                await asyncio.sleep(4)
-        except asyncio.CancelledError:
-            pass
-
-    typing_task = asyncio.create_task(typing_loop())
-    
-    try:
-        ai_reply = await get_ai_reply(user_id, safe_text)
-        await asyncio.sleep(1)
-        
-        # Topic ID add karke reply bhejna
-        await update.message.reply_text(
-            ai_reply,
-            message_thread_id=thread_id
-        )
-        
-        last_bot_reply_time[chat_id] = time.time()
-        
-    except Exception as e:
-        print(f"🔥 [SENDING ERROR LOG]: {str(e)}")
-        await update.message.reply_text("Server is on maintenance 🛠️", message_thread_id=thread_id)
-    finally:
-        typing_task.cancel()
+            ai_reply = await get_ai_reply(user_id, safe_text)
+            await asyncio.sleep(1)
+            
+            await update.message.reply_text(
+                ai_reply,
+                message_thread_id=thread_id
+            )
+            
+            last_bot_reply_time[chat_id] = time.time()
+            
+        except Exception as e:
+            print(f"🔥 [SENDING ERROR LOG]: {str(e)}")
+        finally:
+            typing_task.cancel()
 
 # ==========================================
 # 🚨 8. GLOBAL ERROR HANDLER
@@ -322,7 +399,7 @@ async def global_error_handler(update: object, context: ContextTypes.DEFAULT_TYP
     if isinstance(update, Update) and update.effective_message:
         try:
             await update.effective_message.reply_text(
-                "Server is on maintenance 🛠️",
+                "network sleep mode me chala gya tha 🛠️",
                 message_thread_id=update.effective_message.message_thread_id
             )
         except:
@@ -333,7 +410,7 @@ async def global_error_handler(update: object, context: ContextTypes.DEFAULT_TYP
 # ==========================================
 async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.chat.type == "private":
-        await update.message.reply_text("mai sirf AI MAN Community me work krugi more info ke liye owner se baat kro - @MessageOwner_bot")
+        await update.message.reply_text("mai sirf AI MAN Community me work krugi more info ke liye owner se baat kro - @MessageOwner_bot 💅")
 
 def main():
     print("🚀 Shreya (AI MAN Agent) Starting...")
