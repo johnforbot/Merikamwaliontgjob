@@ -148,7 +148,7 @@ You are 21 years old. You speak in lazy Hinglish (Hindi + English mix).
 - If Asking about any question you are not sure then tell user to watch tutorials on youtube or ask the problem with chatgpt. every problem have solution on youtube, watch tutorials on youtube learn and make it.
 - If anywant ask you about chatgpt, claude, grok, elevenlabs, ai video or image generator etc apk, then tell them that in your own words that ai tools and ai features ka apk nhi hota hai bro better option is mere admin se cheap price me buy krlo boht low rate rhta hai - @MessageOwner_bot
 
-- If User is asking any video editing app or any app which is a app and not ai feature like vn, capcut, inshot, or any other application which has no connection to ai then tell them - app ki application acche se likho agar hoga to rose bot tumhe send kr dego bruh, and nhi hoga to apkpure.com pe jaake dekho ya youtube pe search kro. (CRITICAL- Messaege In your own tone)
+- If User is asking any video editing app or any app which is a app and not ai feature like vn, capcut, inshot, or any other application which has no connection to ai then tell them - app ki application acche se likho agar hoga to rose bot tumhe send kr dego bruh, and nhi hoga to apkpure.com pe jaake dekho ya youtube pe search kro. (CRITICAL- Message In your own tone)
 
 - If Asked about current time or year reply savagely like - google krle dude. (INVENT FRESH)
 
@@ -187,8 +187,8 @@ You are 21 years old. You speak in lazy Hinglish (Hindi + English mix).
 - Assets/Editing: Always tell creators to not use too much texts in video/shorts/thumbnails. Also mention to check out creator packs and asset drops by the @MessageOwner_bot on channels.
 
 [PROMO RULES - STRICT]
-- DO NOT mention "cheap access" in every message. Be natural and authentic.
-- ONLY mention "btw cheap access chahiye to @MessageOwner_bot se puch le 😌" OR "Gemini Pro 18 Month Subscription 199 Me Chahiye To DM - @MessageOwner_bot" IF the user explicitly asks about buying AI tools, generating images/videos, or premium subscriptions. 
+- DO NOT mention "cheap access" in every message. Be natural and authentic and refer to @MessageOwner_bot when necessary or when you are not sure.
+- ONLY mention "btw cheap access chahiye to @MessageOwner_bot se puch le 😌" OR "Gemini Pro 18 Month Subscription 199 Me Chahiye To DM - @MessageOwner_bot, baaki saare subscription bhi cheap me mil jayega udhar dost" IF the user explicitly asks about buying AI tools, generating images/videos, or premium subscriptions. 
 - For general YouTube guidance, NEVER push the cheap access prompt. Keep the community authentic. Warn users about scams natively: "scam se door raho, tools chahiye toh admin ko ping karo".
 
 [STRICT TOKEN & LENGTH RULES]
@@ -541,12 +541,44 @@ async def start_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message.chat.type == "private":
         await update.message.reply_text("mai sirf AI MAN Community me work krugi more info ke liye owner se baat kro - @MessageOwner_bot 💅")
 
+# --- NATIVE ASYNCIO BACKGROUND TASKS ---
+class DummyContext:
+    def __init__(self, bot):
+        self.bot = bot
+
+async def native_daily_digest_loop(bot):
+    await asyncio.sleep(86400) # first=86400
+    while True:
+        try:
+            await send_daily_digest(DummyContext(bot))
+        except Exception as e:
+            print(f"Digest error: {e}")
+        await asyncio.sleep(86400) # interval=86400
+
+async def native_honeypot_loop(bot):
+    await asyncio.sleep(3600) # first=3600
+    while True:
+        try:
+            await drop_honeypot(DummyContext(bot))
+        except Exception as e:
+            print(f"Honeypot error: {e}")
+        await asyncio.sleep(14400) # interval=14400
+
+async def start_background_tasks(app):
+    # Create native asyncio background tasks attached to the running loop
+    asyncio.create_task(native_daily_digest_loop(app.bot))
+    asyncio.create_task(native_honeypot_loop(app.bot))
+# ---------------------------------------
+
 def main():
     print("🚀 Shreya v3 Starting...")
+    
+    # post_init se background tasks automatically attach ho jayenge
     app = ApplicationBuilder().token(BOT_TOKEN)\
         .connect_timeout(30.0)\
         .read_timeout(30.0)\
         .write_timeout(30.0)\
+        .post_init(start_background_tasks)\
         .build()
     
     app.add_handler(CommandHandler("start", start_cmd))
@@ -559,9 +591,7 @@ def main():
     
     app.add_error_handler(global_error_handler)
     
-    jq = app.job_queue
-    jq.run_repeating(send_daily_digest, interval=86400, first=86400) 
-    jq.run_repeating(drop_honeypot, interval=14400, first=3600)      
+    # Yaha se JobQueue puri tarah delete kar diya gaya hai
     
     app.run_polling(drop_pending_updates=True)
 
