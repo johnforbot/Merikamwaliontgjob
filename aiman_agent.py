@@ -201,7 +201,7 @@ You are 21 years old. You speak in lazy Hinglish (Hindi + English mix).
 # ==========================================
 TRIGGERS = [
     # Original
-    "shreya", "help", "hlo", "hi", "hii", "online", "youtube", "yt", "views", "monetize", 
+    "shreya", "help", "@admin", "app", "apk", "mod", "admin", "A I", "voice", "i", "text", "speech", "aitool", "hlo", "hi", "hii", "online", "youtube", "yt", "views", "monetize", 
     "algorithm", "reach", "shadowban", "thumbnail", "editing", "seo", "gemini", 
     "subscribers", "ai tool", "voiceover", "video edit", "problem", 
     "ai man", "please", "subscribe", "ai", "channel", "jawab", "reply", "meri", "muje", "mai", "btao", "msg", "text", "hai",
